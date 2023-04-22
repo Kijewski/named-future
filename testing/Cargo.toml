@@ -1,0 +1,12 @@
+[package]
+name = "named-future-tests"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+named-future = { version = "0.0.1", path = ".." }
+
+[dev-dependencies]
+futures-lite = "1.12.0"
+trybuild = "1.0.80"

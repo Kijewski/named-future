@@ -1,0 +1,36 @@
+[workspace.package]
+edition = "2021"
+rust-version = "1.65"
+authors = ["René Kijewski <crates.io@k6i.de>"]
+license = "Apache-2.0 WITH LLVM-exception"
+description = "Give your Future a name!"
+homepage = "https://github.com/Kijewski/named-future"
+repository = "https://github.com/Kijewski/named-future"
+categories = ["asynchronous", "concurrency"]
+keywords = ["asynchronous", "futures", "async", "no-std"]
+
+[package]
+name = "named-future"
+version = "0.0.1"
+readme = "README.md"
+
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+description.workspace = true
+homepage.workspace = true
+repository.workspace = true
+categories.workspace = true
+keywords.workspace = true
+
+[dependencies]
+named-future-proc-macros = { version = "0.0.1", path = "proc-macros" }
+
+[workspace]
+members = [".", "proc-macros", "testing"]
+default-members = [".", "proc-macros", "testing"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
