@@ -31,7 +31,7 @@ pub unsafe trait NamedFuture {
     /// Size of the future
     const SIZE_OF: usize;
 
-    /// Aligment of the future
+    /// Alignment of the future
     const ALIGN_OF: usize;
 
     /// Is the future Send?
@@ -40,7 +40,7 @@ pub unsafe trait NamedFuture {
     /// Is the future Sync?
     const SYNC: bool;
 
-    /// The arguments to the generated packed into a tuple
+    /// The arguments to the generator, packed into a tuple
     type Args;
 
     /// Build the named future
