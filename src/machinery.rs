@@ -27,15 +27,24 @@ mod align {
 }
 
 #[doc(hidden)]
-pub unsafe trait Layout {
+pub unsafe trait NamedFuture {
     /// Size of the future
     const SIZE_OF: usize;
+
     /// Aligment of the future
     const ALIGN_OF: usize;
+
     /// Is the future Send?
     const SEND: bool;
+
     /// Is the future Sync?
     const SYNC: bool;
+
+    /// The arguments to the generated packed into a tuple
+    type Args;
+
+    /// Build the named future
+    fn new(args: Self::Args) -> Self;
 }
 
 /// An array `[MaybeUninit<u8>; SIZE_OF]` with an alignment of (at least) `ALIGN_OF`

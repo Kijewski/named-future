@@ -83,7 +83,6 @@ pub fn named_future(args: TokenStream, input_stream: TokenStream) -> TokenStream
     };
     let struct_name_string = struct_name.to_string();
 
-    let new_ident = Ident::new("__new_future", function_name_span);
     let gen_ident = function_name;
     let impl_ident = Ident::new("__implementation", function_name_span);
 
@@ -141,8 +140,7 @@ pub fn named_future(args: TokenStream, input_stream: TokenStream) -> TokenStream
         function_name_span => -> #struct_name #ty_generics
     };
 
-    let new_sig = new_sig(&func, &new_ident, &func_sig);
-    let gen_sig = gen_sig(&func, &gen_ident, args_pats_as_tuple, arg_types_as_tuple);
+    let gen_sig = gen_sig(&func, &gen_ident, &args_pats_as_tuple, &arg_types_as_tuple);
     let ensure_send = ensure_send(&args, &struct_name, &crate_name, &gen_ident);
     let ensure_sync = ensure_sync(&args, &struct_name, &crate_name, &gen_ident);
     let impl_send = impl_send(&args, &struct_name, func_gen);
@@ -158,9 +156,10 @@ pub fn named_future(args: TokenStream, input_stream: TokenStream) -> TokenStream
         function_name_span =>
 
         #(#func_attrs)*
-        #[inline(always)]
+        #[inline]
         #func_vis #func_sig {
-            <#struct_name #ty_generics>::#new_ident(#arg_exprs_with_commas)
+            <#struct_name #ty_generics as ::named_future::machinery::NamedFuture>::
+                new(#args_exprs_as_tuple)
         }
 
         #(#struct_attrs)*
@@ -168,8 +167,8 @@ pub fn named_future(args: TokenStream, input_stream: TokenStream) -> TokenStream
         #[must_use = "futures do nothing unless you `.await` or poll them"]
         #struct_vis struct #struct_name #func_gen #where_clause {
             _data: ::named_future::machinery::Bytes<
-                { <Self as ::named_future::machinery::Layout>::SIZE_OF },
-                { <Self as ::named_future::machinery::Layout>::ALIGN_OF },
+                { <Self as ::named_future::machinery::NamedFuture>::SIZE_OF },
+                { <Self as ::named_future::machinery::NamedFuture>::ALIGN_OF },
             >,
             _not_send_or_sync: ::core::marker::PhantomData<*mut ()>,
             _phantom: #phantom,
@@ -177,7 +176,7 @@ pub fn named_future(args: TokenStream, input_stream: TokenStream) -> TokenStream
 
         const _: () = {
             const _: () = {
-                unsafe impl #impl_generics #crate_name::machinery::Layout
+                unsafe impl #impl_generics #crate_name::machinery::NamedFuture
                 for #struct_name #ty_generics #where_clause {
                     const ALIGN_OF: ::core::primitive::usize =
                         #crate_name::machinery::align_of(&#gen_ident);
@@ -185,16 +184,13 @@ pub fn named_future(args: TokenStream, input_stream: TokenStream) -> TokenStream
                         #crate_name::machinery::size_of(&#gen_ident);
                     const SEND: ::core::primitive::bool = #ensure_send;
                     const SYNC: ::core::primitive::bool = #ensure_sync;
-                }
 
-                impl #impl_generics #struct_name #ty_generics #where_clause {
-                    #[inline]
-                    #[doc(hidden)]
-                    #new_sig {
-                        unsafe {
-                            let fut = #gen_ident(#args_exprs_as_tuple);
-                            ::core::mem::transmute(fut)
-                        }
+                    type Args = #arg_types_as_tuple;
+
+                    #[inline(always)]
+                    fn new(args: Self::Args) -> Self {
+                        let fut = #gen_ident(args);
+                        unsafe { ::core::mem::transmute(fut) }
                     }
                 }
 
@@ -243,8 +239,8 @@ pub fn named_future(args: TokenStream, input_stream: TokenStream) -> TokenStream
 fn gen_sig(
     func: &config::Func,
     gen_ident: &Ident,
-    args_pats_as_tuple: syn::Pat,
-    arg_types_as_tuple: syn::Type,
+    args_pats_as_tuple: &syn::Pat,
+    arg_types_as_tuple: &syn::Type,
 ) -> syn::Signature {
     let function_name_span = func.sig.ident.span();
 
@@ -254,15 +250,6 @@ fn gen_sig(
         function_name_span => #args_pats_as_tuple: #arg_types_as_tuple,
     };
     gen_sig
-}
-
-fn new_sig(func: &config::Func, new_ident: &Ident, func_sig: &syn::Signature) -> syn::Signature {
-    let mut new_sig = func.sig.clone();
-    new_sig.ident = new_ident.clone();
-    new_sig.asyncness = None;
-    new_sig.output = func_sig.output.clone();
-    new_sig.generics = syn::Generics::default();
-    new_sig
 }
 
 /// A type "PhantomData<(fn() -> *const A, fn() -> *const B)>"
