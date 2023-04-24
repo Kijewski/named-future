@@ -2,20 +2,20 @@ use core::{future, marker, mem, pin, ptr, task};
 
 mod align {
     pub trait Aligner {
-        type Zst: Send + Sync + Copy + Default;
+        type Aligned<const SIZE: usize>: core::fmt::Debug + Clone + Copy;
     }
 
-    #[derive(Debug, Clone, Copy, Default)]
+    #[derive(Debug, Clone, Copy)]
     pub struct Int<const BYTES: usize>;
 
     macro_rules! impl_alignments {
         ($($ty:ident($align:literal))*) => {$(
             #[repr(align($align))]
-            #[derive(Debug, Clone, Copy, Default)]
-            pub struct $ty;
+            #[derive(Debug, Clone, Copy)]
+            pub struct $ty<const SIZE: usize>(pub [core::mem::MaybeUninit<u8>; SIZE]);
 
             impl Aligner for Int<$align> {
-                type Zst = $ty;
+                type Aligned<const SIZE: usize> = $ty<SIZE>;
             }
         )*};
     }
@@ -38,8 +38,9 @@ pub trait Layout {
     const SYNC: bool;
 }
 
-/// Select a type that has at lease an alignment of `BYTES`
-pub type Align<const BYTES: usize> = <align::Int<BYTES> as align::Aligner>::Zst;
+/// An array `[MaybeUninit<u8>; SIZE_OF]` with an alignment of (at least) `ALIGN_OF`
+pub type Bytes<const SIZE_OF: usize, const ALIGN_OF: usize> =
+    <align::Int<ALIGN_OF> as align::Aligner>::Aligned<SIZE_OF>;
 
 /// [Size of](mem::size_of) the unnamed future of `Generator`
 pub const fn size_of<Generator, Args, Fut>(_: &Generator) -> usize

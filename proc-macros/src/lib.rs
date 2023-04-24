@@ -164,16 +164,13 @@ pub fn named_future(args: TokenStream, input_stream: TokenStream) -> TokenStream
         }
 
         #(#struct_attrs)*
-        #[repr(C)]
+        #[repr(transparent)]
         #[must_use = "futures do nothing unless you `.await` or poll them"]
         #struct_vis struct #struct_name #func_gen #where_clause {
-            _data: [
-                ::core::mem::MaybeUninit<u8>;
-                <Self as #crate_name::machinery::Layout>::SIZE_OF
-            ],
-            _align: #crate_name::machinery::Align<{
-                <Self as #crate_name::machinery::Layout>::ALIGN_OF
-            }>,
+            _data: ::named_future::machinery::Bytes<
+                { <Self as ::named_future::machinery::Layout>::SIZE_OF },
+                { <Self as ::named_future::machinery::Layout>::ALIGN_OF },
+            >,
             _not_send_or_sync: ::core::marker::PhantomData<*mut ()>,
             _phantom: #phantom,
         }
