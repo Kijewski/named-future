@@ -27,7 +27,7 @@ mod align {
 }
 
 #[doc(hidden)]
-pub trait Layout {
+pub unsafe trait Layout {
     /// Size of the future
     const SIZE_OF: usize;
     /// Aligment of the future
