@@ -29,6 +29,7 @@
 // Software.
 
 #![doc = include_str!("../README.md")]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![no_std]
 #![allow(unknown_lints)]
 #![warn(absolute_paths_not_starting_with_crate)]
@@ -47,5 +48,7 @@
 #[doc(hidden)]
 pub mod machinery;
 
+#[cfg(feature = "proc-macros")]
+#[cfg_attr(docsrs, doc(cfg(feature = "proc-macros")))]
 #[doc(inline)]
 pub use named_future_proc_macros::named_future;

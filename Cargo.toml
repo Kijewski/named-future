@@ -25,7 +25,11 @@ categories.workspace = true
 keywords.workspace = true
 
 [dependencies]
-named-future-proc-macros = { version = "0.0.1", path = "proc-macros" }
+named-future-proc-macros = { version = "0.0.1", path = "proc-macros", optional = true }
+
+[features]
+default = ["proc-macros"]
+proc-macros = ["dep:named-future-proc-macros"]
 
 [workspace]
 members = [".", "proc-macros", "testing"]
