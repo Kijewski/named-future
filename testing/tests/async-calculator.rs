@@ -1,12 +1,18 @@
 use futures_lite::future::yield_now;
 use named_future::named_future;
 
+mod renamed {
+    pub mod named {
+        pub use named_future as future;
+    }
+}
+
 /// Calculate `factor1 * factor2 + summand` asynchronously
 ///
 /// # Struct
 ///
 /// Future returned by [`calculate`]
-#[named_future(Send, Sync, Type = pub CalculateFuture, Crate = ::named_future)]
+#[named_future(Send, Sync, type = pub CalculateFuture, crate = renamed::named::future)]
 async fn calculate(factor1: u32, factor2: u32, summand: u32) -> u32 {
     let a = factor1;
     yield_now().await;

@@ -24,20 +24,24 @@ impl Parse for Args {
         let mut result = Args::default();
         if !input.is_empty() {
             while !input.is_empty() {
-                let ident: syn::Ident = input.parse()?;
-                if ident == "Send" {
-                    result.send = Some(ident);
-                } else if ident == "Sync" {
-                    result.sync = Some(ident);
-                } else if ident == "Type" {
+                if input.peek(syn::Token![type]) {
+                    let _: syn::Token![type] = input.parse()?;
                     let _: syn::Token![=] = input.parse()?;
                     result.vis = Some(input.parse()?);
                     result.name = Some(input.parse()?);
-                } else if ident == "Crate" {
+                } else if input.peek(syn::Token![crate]) {
+                    let _: syn::Token![crate] = input.parse()?;
                     let _: syn::Token![=] = input.parse()?;
                     result.crate_name = Some(input.parse()?);
                 } else {
-                    return Err(syn::Error::new_spanned(ident, "Unexpected input"));
+                    let ident: syn::Ident = input.parse()?;
+                    if ident == "Send" {
+                        result.send = Some(ident);
+                    } else if ident == "Sync" {
+                        result.sync = Some(ident);
+                    } else {
+                        return Err(syn::Error::new_spanned(ident, "Unexpected input"));
+                    }
                 }
 
                 if input.peek(syn::Token![,]) {

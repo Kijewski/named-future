@@ -1,0 +1,11 @@
+error[E0603]: function `answer` is private
+  --> tests/expect-compile-error/private-function.rs:11:40
+   |
+11 |     let future: inner::Answer = inner::answer();
+   |                                        ^^^^^^ private function
+   |
+note: the function `answer` is defined here
+  --> tests/expect-compile-error/private-function.rs:5:11
+   |
+5  |     async fn answer() -> usize {
+   |           ^^^^^^^^^

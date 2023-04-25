@@ -1,0 +1,11 @@
+error[E0603]: struct `Answer` is private
+  --> tests/expect-compile-error/private-struct.rs:11:24
+   |
+11 |     let future: inner::Answer = inner::answer();
+   |                        ^^^^^^ private struct
+   |
+note: the struct `Answer` is defined here
+  --> tests/expect-compile-error/private-struct.rs:5:18
+   |
+5  |     pub async fn answer() -> usize {
+   |                  ^^^^^^

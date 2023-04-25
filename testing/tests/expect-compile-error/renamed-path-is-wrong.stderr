@@ -1,0 +1,5 @@
+error[E0433]: failed to resolve: use of undeclared crate or module `some`
+ --> tests/expect-compile-error/renamed-path-is-wrong.rs:4:24
+  |
+4 | #[named_future(crate = some::path)]
+  |                        ^^^^ use of undeclared crate or module `some`

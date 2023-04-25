@@ -3,6 +3,8 @@
 Wrap a [`Future`] in a sized struct, so it can be use in traits, or as return type,
 without the need for [`Box<…>`], [`dyn …`], or [`impl …`].
 
+A simple workaround until [`#![feature(type_alias_impl_trait)]`][tait] is stabilized:
+
 ```rust,untested
 /// A slow multiplication
 ///
@@ -16,7 +18,7 @@ pub async fn slow_mul(factor1: u32, factor2: u32) -> u32 {
 }
 ```
 
-Expands to
+Expands to:
 
 ```rust,untested
 /// A slow multiplication
@@ -44,22 +46,22 @@ and `Debug` for your convenience.
 
 The proc_macro `#[named_future]` has the following optional arguments:
 
-- **`#[named_future(Send)]`**:  
+- **`#[named_future(Send)]`**  
   - Implement [`Send`] for the generated `struct`.
     It is currently not possible to detect automatically if the `struct` should be `Send`,
     so you have to ask for the implementation manually.
     Even so, it is ensured that the [`Future`] is send, and the compilation will fail otherwise.
 
-- **`#[named_future(Sync)]`**:  
+- **`#[named_future(Sync)]`**  
   - Implement [`Sync`] for the generated `struct`. Please see the explanation for `Send`.
 
-- **`#[named_future(Type = Name)]`**:  
+- **<code>#\[named_future(type = <em>Name</em>)\]</code>**  
   - Instead of the default name, i.e. using pascal case of the function name,
     you can override the name using this argument.
-    You can also override the visibility of the `struct` using this argument: `Type = pub Name`.
+    You can also override the visibility of the `struct` using this argument: `type = pub Name`.
     By default, the visibility of the function is copied.
 
-- **`#[named_future(Crate = some::path)]`**:  
+- **<code>#\[named_future(crate = <em>some::path</em>)\]</code>**  
   - If you have renamed the dependency in your `Cargo.toml`,
     e.g. `renamed = { package = "named-future", version = "0.0.1" }`,
     then you have to specify its name / path.
@@ -73,9 +75,14 @@ The library code can be used with `#![no_std]`.
 Because of limitations in rust, it is currently not possible to implement a “named future” for
 generic functions: “error: generic `Self` types are currently not permitted in anonymous constants”.
 
+Inspired by the prior work of Jun Ryung Ju: [`rename-future`]
+
 [`Future`]: https://doc.rust-lang.org/1.65.0/core/future/trait.Future.html
 [`Box<…>`]: https://doc.rust-lang.org/1.65.0/alloc/boxed/struct.Box.html
 [`dyn …`]: https://doc.rust-lang.org/1.65.0/std/keyword.dyn.html
 [`impl …`]: https://doc.rust-lang.org/1.65.0/std/keyword.impl.html
 [`Send`]: https://doc.rust-lang.org/1.65.0/core/marker/trait.Send.html
 [`Sync`]: https://doc.rust-lang.org/1.65.0/core/marker/trait.Sync.html
+[tait]: https://github.com/rust-lang/rust/issues/63063
+[rfc1598]: https://github.com/rust-lang/rfcs/blob/master/text/1598-generic_associated_types.md
+[`rename-future`]: https://github.com/ArtBlnd/rename-future/tree/20c9d44726fd9f148f118cc260b713ce3d609ba2
