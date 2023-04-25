@@ -1,5 +1,10 @@
 # named-future: *Give your Future a name!*
 
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Kijewski/named-future/ci.yml?branch=main)](https://github.com/Kijewski/named-future/actions/workflows/ci.yml)
+[![Crates.io](https://img.shields.io/crates/v/named-future?logo=rust)](https://crates.io/crates/named-future)
+![Minimum supported Rust version: 1.65](https://img.shields.io/badge/rustc-1.65+-informational?logo=rust "Minimum Supported Rust Version: 1.65")
+[![License: Apache-2.0 WITH LLVM-exception](https://img.shields.io/badge/license-Apache--2.0-informational?logo=apache)](/LICENSE.md "License: Apache-2.0 WITH LLVM-exception")
+
 Wrap a [`Future`] in a sized struct, so it can be use in traits, or as return type,
 without the need for [`Box<…>`], [`dyn …`], or [`impl …`].
 
