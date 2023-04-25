@@ -28,7 +28,6 @@
 // the License, but only in their entirety and only with respect to the Combined
 // Software.
 
-#![doc = include_str!("../README.md")]
 #![allow(unknown_lints)]
 #![warn(absolute_paths_not_starting_with_crate)]
 #![warn(elided_lifetimes_in_paths)]
@@ -36,7 +35,6 @@
 #![warn(meta_variable_misuse)]
 #![warn(missing_copy_implementations)]
 #![warn(missing_debug_implementations)]
-#![warn(missing_docs)]
 #![warn(non_ascii_idents)]
 #![warn(noop_method_call)]
 #![warn(single_use_lifetimes)]
@@ -53,7 +51,6 @@ use syn::punctuated::Punctuated;
 use syn::spanned::Spanned as _;
 use syn::{parse_quote_spanned, Ident};
 
-/// TODO
 #[proc_macro_attribute]
 pub fn named_future(args: TokenStream, input_stream: TokenStream) -> TokenStream {
     let args: config::Args = syn::parse_macro_input!(args);
@@ -158,7 +155,7 @@ pub fn named_future(args: TokenStream, input_stream: TokenStream) -> TokenStream
         #(#func_attrs)*
         #[inline]
         #func_vis #func_sig {
-            <#struct_name #ty_generics as ::named_future::machinery::NamedFuture>::
+            <#struct_name #ty_generics as #crate_name::machinery::NamedFuture>::
                 new(#args_exprs_as_tuple)
         }
 
@@ -166,9 +163,9 @@ pub fn named_future(args: TokenStream, input_stream: TokenStream) -> TokenStream
         #[repr(transparent)]
         #[must_use = "futures do nothing unless you `.await` or poll them"]
         #struct_vis struct #struct_name #func_gen #where_clause {
-            _data: ::named_future::machinery::Bytes<
-                { <Self as ::named_future::machinery::NamedFuture>::SIZE_OF },
-                { <Self as ::named_future::machinery::NamedFuture>::ALIGN_OF },
+            _data: #crate_name::machinery::Bytes<
+                { <Self as #crate_name::machinery::NamedFuture>::SIZE_OF },
+                { <Self as #crate_name::machinery::NamedFuture>::ALIGN_OF },
             >,
             _not_send_or_sync: ::core::marker::PhantomData<*mut ()>,
             _phantom: #phantom,
