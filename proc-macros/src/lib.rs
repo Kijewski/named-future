@@ -149,15 +149,9 @@ pub fn named_future(args: TokenStream, input_stream: TokenStream) -> TokenStream
     // Implementation
     // ////////////////////////////////////////////////////////////////////////////////////////////
 
-    TokenStream::from(quote_spanned! {
-        function_name_span =>
-
-        #(#func_attrs)*
-        #[inline]
-        #func_vis #func_sig {
-            <#struct_name #ty_generics as #crate_name::machinery::NamedFuture>::
-                new(#args_exprs_as_tuple)
-        }
+    let struct_name_span = struct_name.span();
+    let struct_definition = quote_spanned! {
+        struct_name_span =>
 
         #(#struct_attrs)*
         #[repr(transparent)]
@@ -170,6 +164,19 @@ pub fn named_future(args: TokenStream, input_stream: TokenStream) -> TokenStream
             _not_send_or_sync: ::core::marker::PhantomData<*mut ()>,
             _phantom: #phantom,
         }
+    };
+
+    TokenStream::from(quote_spanned! {
+        function_name_span =>
+
+        #(#func_attrs)*
+        #[inline]
+        #func_vis #func_sig {
+            <#struct_name #ty_generics as #crate_name::machinery::NamedFuture>::
+                new(#args_exprs_as_tuple)
+        }
+
+        #struct_definition
 
         const _: () = {
             const _: () = {

@@ -5,7 +5,7 @@ error[E0603]: struct `Answer` is private
    |                        ^^^^^^ private struct
    |
 note: the struct `Answer` is defined here
-  --> tests/expect-compile-error/private-struct.rs:5:18
+  --> tests/expect-compile-error/private-struct.rs:4:41
    |
-5  |     pub async fn answer() -> usize {
-   |                  ^^^^^^
+4  |     #[named_future::named_future(type = Answer)]
+   |                                         ^^^^^^
