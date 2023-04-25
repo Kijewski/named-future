@@ -5,7 +5,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
-named-future = { version = "=0.1.0-pre.1", path = ".." }
+named-future = { version = "=0.1.0-pre.2", path = ".." }
 
 [dev-dependencies]
 futures-lite = "1.12.0"
