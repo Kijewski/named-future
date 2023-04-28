@@ -2,7 +2,7 @@ use core::{future, marker, mem, pin, ptr, task};
 
 mod align {
     pub trait Aligner {
-        type Aligned<const SIZE: usize>: core::fmt::Debug + Clone + Copy;
+        type Aligned<const SIZE: usize>: core::fmt::Debug + Copy;
     }
 
     #[derive(Debug, Clone, Copy)]
@@ -10,9 +10,11 @@ mod align {
 
     macro_rules! impl_alignments {
         ($($ty:ident($align:literal))*) => {$(
-            #[repr(align($align))]
+            #[repr(C, align($align))]
             #[derive(Debug, Clone, Copy)]
-            pub struct $ty<const SIZE: usize>(pub [core::mem::MaybeUninit<u8>; SIZE]);
+            pub struct $ty<const SIZE: usize> {
+                pub data: [core::mem::MaybeUninit<u8>; SIZE],
+            }
 
             impl Aligner for Int<$align> {
                 type Aligned<const SIZE: usize> = $ty<SIZE>;
@@ -85,37 +87,12 @@ where
     true
 }
 
-/// Transmute named future to its unnamed future
-///
-/// SAFETY: `Generator` must be the generator of `This`
-#[inline(always)]
-unsafe fn as_fut<'a, Generator, Args, Fut, This>(_: &Generator, data: &'a mut This) -> &'a mut Fut
-where
-    Generator: Fn(Args) -> Fut,
-{
-    mem::transmute(data)
-}
-
-/// Transmute pinned named future to its unnamed future
-///
-/// SAFETY: `Generator` must be the generator of `This`
-#[inline(always)]
-unsafe fn as_fut_pin<'a, Generator, Args, Fut, This>(
-    _: &Generator,
-    data: pin::Pin<&'a mut This>,
-) -> pin::Pin<&'a mut Fut>
-where
-    Generator: Fn(Args) -> Fut,
-{
-    mem::transmute(data)
-}
-
 /// [`poll()`](future::Future::poll) for a named future
 ///
 /// SAFETY: `Generator` must be the generator of `This`.
 #[inline(always)]
 pub unsafe fn poll<Generator, Args, Fut, This>(
-    generator: &Generator,
+    _: &Generator,
     this: pin::Pin<&mut This>,
     cx: &mut task::Context<'_>,
 ) -> task::Poll<Fut::Output>
@@ -123,7 +100,7 @@ where
     Generator: Fn(Args) -> Fut,
     Fut: future::Future,
 {
-    let fut = as_fut_pin(generator, this);
+    let fut: pin::Pin<&mut Fut> = mem::transmute(this);
     fut.poll(cx)
 }
 
@@ -131,10 +108,11 @@ where
 ///
 /// SAFETY: `Generator` must be the generator of `This`.
 #[inline(always)]
-pub unsafe fn drop<Generator, Args, Fut, This>(generator: &Generator, this: &mut This)
+pub unsafe fn drop<Generator, Args, Fut, This>(_: &Generator, this: &mut This)
 where
     Generator: Fn(Args) -> Fut,
+    Fut: future::Future,
 {
-    let fut = as_fut(generator, this);
+    let fut: &mut Fut = mem::transmute(this);
     ptr::drop_in_place(fut);
 }

@@ -144,6 +144,13 @@ pub fn named_future(args: TokenStream, input_stream: TokenStream) -> TokenStream
     let impl_sync = impl_sync(&args, &struct_name, func_gen);
 
     func.sig.ident = impl_ident.clone();
+    for arg in &mut func_sig.inputs {
+        if let syn::FnArg::Typed(arg) = arg {
+            if let syn::Pat::Ident(arg) = &mut *arg.pat {
+                arg.mutability = None;
+            }
+        }
+    }
 
     // ////////////////////////////////////////////////////////////////////////////////////////////
     // Implementation
@@ -157,11 +164,12 @@ pub fn named_future(args: TokenStream, input_stream: TokenStream) -> TokenStream
         #[repr(transparent)]
         #[must_use = "futures do nothing unless you `.await` or poll them"]
         #struct_vis struct #struct_name #func_gen #where_clause {
-            _data: #crate_name::machinery::Bytes<
+            fut: #crate_name::machinery::Bytes<
                 { <Self as #crate_name::machinery::NamedFuture>::SIZE_OF },
                 { <Self as #crate_name::machinery::NamedFuture>::ALIGN_OF },
             >,
             _not_send_or_sync: ::core::marker::PhantomData<*mut ()>,
+            _pin: ::core::marker::PhantomPinned,
             _phantom: #phantom,
         }
     };
@@ -202,7 +210,7 @@ pub fn named_future(args: TokenStream, input_stream: TokenStream) -> TokenStream
                 for #struct_name #ty_generics #where_clause {
                     #[inline]
                     fn drop(&mut self) {
-                        unsafe { #crate_name::machinery::drop(&#gen_ident, self) };
+                        unsafe { #crate_name::machinery::drop(&#gen_ident, &mut self.fut.data) };
                     }
                 }
 
@@ -365,7 +373,10 @@ fn arg_exprs_with_commas(
         .map(|input| {
             if let syn::FnArg::Typed(item) = input {
                 let span = item.span();
-                let pat = &item.pat;
+                let mut pat = (*item.pat).clone();
+                if let syn::Pat::Ident(pat) = &mut pat {
+                    pat.mutability = None;
+                }
                 let expr: syn::Expr = parse_quote_spanned!(span => #pat);
                 Ok(expr)
             } else {
@@ -419,7 +430,11 @@ fn args_pats_as_tuple(func: &config::Func) -> Result<syn::Pat, TokenStream> {
         .iter()
         .map(|input| {
             if let syn::FnArg::Typed(item) = input {
-                Ok(syn::Pat::clone(&item.pat))
+                let mut pat = (*item.pat).clone();
+                if let syn::Pat::Ident(pat) = &mut pat {
+                    pat.mutability = None;
+                }
+                Ok(pat)
             } else {
                 Err(syn::Error::new_spanned(input, "Not implemented for Self"))
             }
