@@ -46,6 +46,7 @@ mod config;
 
 use heck::ToPascalCase as _;
 use proc_macro::TokenStream;
+use proc_macro2::TokenTree;
 use quote::quote_spanned;
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned as _;
@@ -118,6 +119,8 @@ pub fn named_future(args: TokenStream, input_stream: TokenStream) -> TokenStream
     };
     let phantom = phantom(&func.sig.generics, function_name_span);
 
+    let ty_self = ty_self(&func, &struct_name);
+
     // ////////////////////////////////////////////////////////////////////////////////////////////
     // Signatures
     // ////////////////////////////////////////////////////////////////////////////////////////////
@@ -163,8 +166,8 @@ pub fn named_future(args: TokenStream, input_stream: TokenStream) -> TokenStream
         #[must_use = "futures do nothing unless you `.await` or poll them"]
         #struct_vis struct #struct_name #func_gen #where_clause {
             _future: #crate_name::machinery::Bytes<
-                { <Self as #crate_name::machinery::NamedFuture>::SIZE_OF },
-                { <Self as #crate_name::machinery::NamedFuture>::ALIGN_OF },
+                { <#ty_self as #crate_name::machinery::NamedFuture>::SIZE_OF },
+                { <#ty_self as #crate_name::machinery::NamedFuture>::ALIGN_OF },
             >,
             _not_send_or_sync: ::core::marker::PhantomData<*mut ()>,
             _pin: ::core::marker::PhantomPinned,
@@ -413,4 +416,55 @@ fn args_pats_as_tuple(func: &config::Func) -> Result<syn::Pat, TokenStream> {
         paren_token: Default::default(),
         elems: result,
     }))
+}
+
+/// The type "Self<'static, …>"
+fn ty_self(func: &config::Func, name: &Ident) -> proc_macro2::TokenStream {
+    let lifetimes: Vec<_> = func
+        .sig
+        .generics
+        .lifetimes()
+        .map(|lt| &lt.lifetime.ident)
+        .collect();
+
+    let span = name.span();
+    let (_, ty_generics, _) = func.sig.generics.split_for_impl();
+    let stream = quote_spanned!(span => #name #ty_generics);
+
+    lifetimes_to_static(&lifetimes, stream)
+}
+
+/// Replace lifetimes in `lifetimes` with `'static`
+fn lifetimes_to_static(
+    lifetimes: &[&Ident],
+    stream: proc_macro2::TokenStream,
+) -> proc_macro2::TokenStream {
+    let mut had_apos = false;
+    stream
+        .into_iter()
+        .map(|tt| {
+            let is_lt = had_apos;
+            had_apos = false;
+            match tt {
+                TokenTree::Ident(mut ident) => {
+                    if is_lt && lifetimes.iter().any(|lt| **lt == ident) {
+                        ident = Ident::new("static", ident.span());
+                    }
+                    TokenTree::Ident(ident)
+                },
+                TokenTree::Punct(punct) => {
+                    if punct.as_char() == '\'' {
+                        had_apos = true;
+                    }
+                    TokenTree::Punct(punct)
+                },
+                TokenTree::Literal(lit) => TokenTree::Literal(lit),
+                TokenTree::Group(group) => {
+                    let delimiter = group.delimiter();
+                    let tt = lifetimes_to_static(lifetimes, group.stream());
+                    TokenTree::Group(proc_macro2::Group::new(delimiter, tt))
+                },
+            }
+        })
+        .collect()
 }
