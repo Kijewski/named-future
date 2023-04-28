@@ -138,10 +138,8 @@ pub fn named_future(args: TokenStream, input_stream: TokenStream) -> TokenStream
     };
 
     let gen_sig = gen_sig(&func, &gen_ident, &args_pats_as_tuple, &arg_types_as_tuple);
-    let ensure_send = ensure_send(&args, &struct_name, &crate_name, &gen_ident);
-    let ensure_sync = ensure_sync(&args, &struct_name, &crate_name, &gen_ident);
-    let impl_send = impl_send(&args, &struct_name, func_gen);
-    let impl_sync = impl_sync(&args, &struct_name, func_gen);
+    let impl_send = impl_send(&args, &struct_name, func_gen, &gen_ident, &crate_name);
+    let impl_sync = impl_sync(&args, &struct_name, func_gen, &gen_ident, &crate_name);
 
     func.sig.ident = impl_ident.clone();
     for arg in &mut func_sig.inputs {
@@ -164,7 +162,7 @@ pub fn named_future(args: TokenStream, input_stream: TokenStream) -> TokenStream
         #[repr(transparent)]
         #[must_use = "futures do nothing unless you `.await` or poll them"]
         #struct_vis struct #struct_name #func_gen #where_clause {
-            fut: #crate_name::machinery::Bytes<
+            _future: #crate_name::machinery::Bytes<
                 { <Self as #crate_name::machinery::NamedFuture>::SIZE_OF },
                 { <Self as #crate_name::machinery::NamedFuture>::ALIGN_OF },
             >,
@@ -194,8 +192,6 @@ pub fn named_future(args: TokenStream, input_stream: TokenStream) -> TokenStream
                         #crate_name::machinery::align_of(&#gen_ident);
                     const SIZE_OF: ::core::primitive::usize =
                         #crate_name::machinery::size_of(&#gen_ident);
-                    const SEND: ::core::primitive::bool = #ensure_send;
-                    const SYNC: ::core::primitive::bool = #ensure_sync;
 
                     type Args = #arg_types_as_tuple;
 
@@ -210,7 +206,7 @@ pub fn named_future(args: TokenStream, input_stream: TokenStream) -> TokenStream
                 for #struct_name #ty_generics #where_clause {
                     #[inline]
                     fn drop(&mut self) {
-                        unsafe { #crate_name::machinery::drop(&#gen_ident, &mut self.fut.data) };
+                        unsafe { #crate_name::machinery::drop(&#gen_ident, self) };
                     }
                 }
 
@@ -237,12 +233,12 @@ pub fn named_future(args: TokenStream, input_stream: TokenStream) -> TokenStream
                 #impl_send
                 #impl_sync
 
-                #[inline(always)]
                 #gen_sig {
                     #impl_ident(#arg_exprs_with_commas).await
                 }
             };
 
+            #[inline(always)]
             #func #body
         };
     })
@@ -288,53 +284,21 @@ fn phantom(func_gen: &syn::Generics, function_name_span: proc_macro2::Span) -> s
     }
 }
 
-/// "$crate::machinery::ensure_send(&#gen_ident)"
-fn ensure_send(
-    args: &config::Args,
-    struct_name: &Ident,
-    crate_name: &syn::Path,
-    gen_ident: &Ident,
-) -> syn::Expr {
-    if let Some(ref marker) = args.send {
-        let span = marker.span();
-        parse_quote_spanned! {
-            span => #crate_name::machinery::ensure_send(&#gen_ident)
-        }
-    } else {
-        let span = struct_name.span();
-        parse_quote_spanned!(span => false)
-    }
-}
-
-/// "$crate::machinery::ensure_sync(&#gen_ident)"
-fn ensure_sync(
-    args: &config::Args,
-    struct_name: &Ident,
-    crate_name: &syn::Path,
-    gen_ident: &Ident,
-) -> syn::Expr {
-    if let Some(ref marker) = args.sync {
-        let span = marker.span();
-        parse_quote_spanned! {
-            span => #crate_name::machinery::ensure_sync(&#gen_ident)
-        }
-    } else {
-        let span = struct_name.span();
-        parse_quote_spanned!(span => false)
-    }
-}
-
 /// "impl Send for Type {}"
 fn impl_send(
     args: &config::Args,
     struct_name: &Ident,
     func_gen: &syn::Generics,
+    gen_ident: &Ident,
+    crate_name: &syn::Path,
 ) -> Option<proc_macro2::TokenStream> {
     if let Some(ref marker) = args.send {
         let (impl_generics, ty_generics, where_clause) = func_gen.split_for_impl();
         let span = marker.span();
         Some(quote_spanned! {
             span =>
+            const _: () = #crate_name::machinery::ensure_send(&#gen_ident);
+
             unsafe impl #impl_generics ::core::marker::Send
             for #struct_name #ty_generics #where_clause {}
         })
@@ -348,12 +312,16 @@ fn impl_sync(
     args: &config::Args,
     struct_name: &Ident,
     func_gen: &syn::Generics,
+    gen_ident: &Ident,
+    crate_name: &syn::Path,
 ) -> Option<proc_macro2::TokenStream> {
     if let Some(ref marker) = args.sync {
         let (impl_generics, ty_generics, where_clause) = func_gen.split_for_impl();
         let span = marker.span();
         Some(quote_spanned! {
             span =>
+            const _: () = #crate_name::machinery::ensure_sync(&#gen_ident);
+
             unsafe impl #impl_generics ::core::marker::Sync
             for #struct_name #ty_generics #where_clause {}
         })

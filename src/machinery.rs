@@ -36,12 +36,6 @@ pub trait NamedFuture {
     /// Alignment of the future
     const ALIGN_OF: usize;
 
-    /// Is the future Send?
-    const SEND: bool;
-
-    /// Is the future Sync?
-    const SYNC: bool;
-
     /// The arguments to the generator, packed into a tuple
     type Args;
 
@@ -69,22 +63,20 @@ where
     mem::align_of::<Fut>()
 }
 
-/// Return `true` if `Generator` is [`Send`], otherwise undefined
-pub const fn ensure_send<Generator, Args, Fut>(_: &Generator) -> bool
+/// Implemented if `Generator` is [`Send`], otherwise undefined
+pub const fn ensure_send<Generator, Args, Fut>(_: &Generator)
 where
     Generator: Fn(Args) -> Fut,
     Fut: marker::Send,
 {
-    true
 }
 
-/// Return `true` if `Generator` is [`Sync`], otherwise undefined
-pub const fn ensure_sync<Generator, Args, Fut>(_: &Generator) -> bool
+/// Implemented if `Generator` is [`Sync`], otherwise undefined
+pub const fn ensure_sync<Generator, Args, Fut>(_: &Generator)
 where
     Generator: Fn(Args) -> Fut,
     Fut: marker::Sync,
 {
-    true
 }
 
 /// [`poll()`](future::Future::poll) for a named future
