@@ -48,6 +48,7 @@ pub type Bytes<const SIZE_OF: usize, const ALIGN_OF: usize> =
     <align::Int<ALIGN_OF> as align::Aligner>::Aligned<SIZE_OF>;
 
 /// [Size of](mem::size_of) the unnamed future of `Generator`
+#[must_use]
 pub const fn size_of<Generator, Args, Fut>(_: &Generator) -> usize
 where
     Generator: Fn(Args) -> Fut,
@@ -56,6 +57,7 @@ where
 }
 
 /// [Alignment of](mem::align_of) the unnamed future of `Generator`
+#[must_use]
 pub const fn align_of<Generator, Args, Fut>(_: &Generator) -> usize
 where
     Generator: Fn(Args) -> Fut,

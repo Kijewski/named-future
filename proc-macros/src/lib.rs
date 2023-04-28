@@ -180,6 +180,7 @@ pub fn named_future(args: TokenStream, input_stream: TokenStream) -> TokenStream
 
         #(#func_attrs)*
         #[inline]
+        #[allow(clippy::needless_lifetimes)]
         #func_vis #func_sig {
             <#struct_name #ty_generics as #crate_name::machinery::NamedFuture>::
                 new(#args_exprs_as_tuple)
@@ -187,8 +188,16 @@ pub fn named_future(args: TokenStream, input_stream: TokenStream) -> TokenStream
 
         #struct_definition
 
+        #[allow(clippy::needless_lifetimes)]
         const _: () = {
+            #[inline(always)]
+            #func #body
+
             const _: () = {
+                #gen_sig {
+                    #impl_ident(#arg_exprs_with_commas).await
+                }
+
                 impl #impl_generics #crate_name::machinery::NamedFuture
                 for #struct_name #ty_generics #where_clause {
                     const ALIGN_OF: ::core::primitive::usize =
@@ -235,14 +244,7 @@ pub fn named_future(args: TokenStream, input_stream: TokenStream) -> TokenStream
 
                 #impl_send
                 #impl_sync
-
-                #gen_sig {
-                    #impl_ident(#arg_exprs_with_commas).await
-                }
             };
-
-            #[inline(always)]
-            #func #body
         };
     })
 }
