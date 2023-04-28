@@ -188,7 +188,7 @@ pub fn named_future(args: TokenStream, input_stream: TokenStream) -> TokenStream
 
         const _: () = {
             const _: () = {
-                unsafe impl #impl_generics #crate_name::machinery::NamedFuture
+                impl #impl_generics #crate_name::machinery::NamedFuture
                 for #struct_name #ty_generics #where_clause {
                     const ALIGN_OF: ::core::primitive::usize =
                         #crate_name::machinery::align_of(&#gen_ident);

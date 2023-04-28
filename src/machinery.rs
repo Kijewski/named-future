@@ -29,7 +29,7 @@ mod align {
 }
 
 #[doc(hidden)]
-pub unsafe trait NamedFuture {
+pub trait NamedFuture {
     /// Size of the future
     const SIZE_OF: usize;
 
