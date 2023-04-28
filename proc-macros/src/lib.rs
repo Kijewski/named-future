@@ -292,19 +292,15 @@ fn impl_send(
     gen_ident: &Ident,
     crate_name: &syn::Path,
 ) -> Option<proc_macro2::TokenStream> {
-    if let Some(ref marker) = args.send {
-        let (impl_generics, ty_generics, where_clause) = func_gen.split_for_impl();
-        let span = marker.span();
-        Some(quote_spanned! {
-            span =>
-            const _: () = #crate_name::machinery::ensure_send(&#gen_ident);
+    let span = args.send.as_ref()?.span();
+    let (impl_generics, ty_generics, where_clause) = func_gen.split_for_impl();
+    Some(quote_spanned! {
+        span =>
+        const _: () = #crate_name::machinery::ensure_send(&#gen_ident);
 
-            unsafe impl #impl_generics ::core::marker::Send
-            for #struct_name #ty_generics #where_clause {}
-        })
-    } else {
-        None
-    }
+        unsafe impl #impl_generics ::core::marker::Send
+        for #struct_name #ty_generics #where_clause {}
+    })
 }
 
 /// "impl Sync for Type {}"
@@ -315,19 +311,15 @@ fn impl_sync(
     gen_ident: &Ident,
     crate_name: &syn::Path,
 ) -> Option<proc_macro2::TokenStream> {
-    if let Some(ref marker) = args.sync {
-        let (impl_generics, ty_generics, where_clause) = func_gen.split_for_impl();
-        let span = marker.span();
-        Some(quote_spanned! {
-            span =>
-            const _: () = #crate_name::machinery::ensure_sync(&#gen_ident);
+    let span = args.sync.as_ref()?.span();
+    let (impl_generics, ty_generics, where_clause) = func_gen.split_for_impl();
+    Some(quote_spanned! {
+        span =>
+        const _: () = #crate_name::machinery::ensure_sync(&#gen_ident);
 
-            unsafe impl #impl_generics ::core::marker::Sync
-            for #struct_name #ty_generics #where_clause {}
-        })
-    } else {
-        None
-    }
+        unsafe impl #impl_generics ::core::marker::Sync
+        for #struct_name #ty_generics #where_clause {}
+    })
 }
 
 /// Comma separated expression "a, b, c"
