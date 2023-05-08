@@ -96,7 +96,7 @@ jobs:
           toolchain: nightly
           components: miri
 
-      - run: cargo test --workspace --all-targets
+      - run: cargo miri test --workspace --all-targets
 
   doc:
     runs-on: ubuntu-latest

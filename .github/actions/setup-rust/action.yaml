@@ -10,6 +10,7 @@ inputs:
     required: false
   components:
     description: Pass-through to components on actions-rs
+    default: ""
     required: false
 
 runs:
@@ -26,30 +27,33 @@ runs:
           ~/.rustup/downloads
           ~/.rustup/toolchains
           ~/.rustup/update-hashes
-        key: rustup-${{ runner.os }}
-
-    - name: Install Rustup
-      shell: bash
-      run: which rustup || curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash || true
+        key: rustup-${{ inputs.key }}-${{ runner.os }}-${{ inputs.toolchain }}
+        restore-keys: |
+          rustup-${{ inputs.key }}-${{ runner.os }}-
+          rustup-${{ inputs.key }}-
+          rustup-
 
     - name: Update Rustup
       shell: bash
-      run: rustup self update || true
-
-    - name: Update
-      shell: bash
-      run: rustup update || true
+      run: rustup self update
 
     - name: Install Toolchain
-      uses: dtolnay/rust-toolchain@stable
-      id: toolchain-install
-      with:
-        toolchain: ${{ inputs.toolchain }}
-        components: ${{ inputs.components }}
+      shell: bash
+      if: inputs.components == ''
+      run: rustup toolchain install ${{ inputs.toolchain }} --profile minimal --no-self-update
+
+    - name: Install Toolchain + Components
+      shell: bash
+      if: inputs.components != ''
+      run: rustup toolchain install ${{ inputs.toolchain }} --profile minimal --no-self-update --component ${{ inputs.components }}
 
     - name: Set default
       shell: bash
       run: rustup default ${{ inputs.toolchain }}
+
+    - name: Update
+      shell: bash
+      run: rustup update ${{ inputs.toolchain }} --no-self-update
 
     - name: Build Cache
       uses: actions/cache@v3

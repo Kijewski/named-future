@@ -9,4 +9,5 @@ named-future = { version = "=0.1.0-pre.2", path = ".." }
 
 [dev-dependencies]
 futures-lite = "1.12.0"
-trybuild = "1.0.80"
+trybuild = { version = "1.0.80", features = ["diff"] }
+version_check = "0.9.4"
