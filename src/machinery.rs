@@ -9,23 +9,22 @@ mod align {
     pub struct Int<const BYTES: usize>;
 
     macro_rules! impl_alignments {
-        ($($ty:ident($align:literal))*) => {$(
-            #[repr(C, align($align))]
-            #[derive(Debug, Clone, Copy)]
-            pub struct $ty<const SIZE: usize> {
-                pub data: [core::mem::MaybeUninit<u8>; SIZE],
-            }
+        ($($align:literal)*) => {$(
+            const _: () = {
+                #[repr(C, align($align))]
+                #[derive(Debug, Clone, Copy)]
+                pub struct V<const SIZE: usize> {
+                    pub data: [core::mem::MaybeUninit<u8>; SIZE],
+                }
 
-            impl Aligner for Int<$align> {
-                type Aligned<const SIZE: usize> = $ty<SIZE>;
-            }
+                impl Aligner for Int<$align> {
+                    type Aligned<const SIZE: usize> = V<SIZE>;
+                }
+            };
         )*};
     }
 
-    impl_alignments! {
-        A1(1) A2(2) A4(4) A8(8) A16(16) A32(32) A64(64) A128(128) A256(256)
-        A512(512) A1024(1024) A2048(2048) A4096(4096) A8192(8192) A16384(16384)
-    }
+    impl_alignments!(1 2 4 8 16 32 64 128 256 512 1024 2048 4096 8192 16384 32768 65536);
 }
 
 #[doc(hidden)]
